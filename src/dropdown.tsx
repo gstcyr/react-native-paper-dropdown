@@ -1,4 +1,12 @@
-import { FlatList, Platform, ScrollView, StatusBar, View } from 'react-native';
+import {
+  FlatList,
+  NativeSyntheticEvent,
+  Platform,
+  ScrollView,
+  StatusBar,
+  TextInputFocusEventData,
+  View,
+} from 'react-native';
 import { Menu, TextInput, TouchableRipple } from 'react-native-paper';
 import DropdownItem from './dropdown-item';
 import DropdownInput from './dropdown-input';
@@ -28,6 +36,7 @@ function Dropdown(props: DropdownProps, ref: React.Ref<DropdownRef>) {
     isFlatList = false,
     flatListProps,
     scrollViewProps,
+    isSearchable = false,
     Touchable = TouchableRipple,
     disabled = false,
     error = false,
@@ -35,6 +44,7 @@ function Dropdown(props: DropdownProps, ref: React.Ref<DropdownRef>) {
     CustomDropdownItem = DropdownItem,
     CustomDropdownInput = DropdownInput,
     CustomMenuHeader = DropdownHeader,
+    customInputProps = {},
   } = props;
   const selectedLabel = options.find((option) => option.value === value)?.label;
   const {
@@ -45,7 +55,7 @@ function Dropdown(props: DropdownProps, ref: React.Ref<DropdownRef>) {
     menuStyle,
     defaultListStyle,
     dropdownLayout,
-  } = useDropdown(maxMenuHeight);
+  } = useDropdown({ maxMenuHeight, isSearchable });
   const rightIcon = enable ? menuUpIcon : menuDownIcon;
   const contentStyle = useMemo(() => ({ paddingVertical: 0 }), []);
 
@@ -87,6 +97,39 @@ function Dropdown(props: DropdownProps, ref: React.Ref<DropdownRef>) {
     ]
   );
 
+  const handleInputFocus = useCallback(
+    (_e: NativeSyntheticEvent<TextInputFocusEventData>) => setEnable(true),
+    [setEnable]
+  );
+
+  // Memoize the custom input props to prevent unnecessary re-renders
+  const inputProps = useMemo(
+    () => ({
+      placeholder,
+      label,
+      rightIcon,
+      selectedLabel,
+      mode,
+      disabled,
+      error,
+      isSearchable,
+      onFocus: handleInputFocus,
+      ...customInputProps,
+    }),
+    [
+      placeholder,
+      label,
+      rightIcon,
+      selectedLabel,
+      mode,
+      disabled,
+      error,
+      isSearchable,
+      handleInputFocus,
+      customInputProps,
+    ]
+  );
+
   return (
     <Menu
       visible={enable}
@@ -99,19 +142,11 @@ function Dropdown(props: DropdownProps, ref: React.Ref<DropdownRef>) {
         <Touchable
           testID={testID}
           disabled={disabled}
-          onPress={toggleMenu}
           onLayout={onLayout}
+          {...(!isSearchable && { onPress: toggleMenu })}
         >
-          <View pointerEvents="none">
-            <CustomDropdownInput
-              placeholder={placeholder}
-              label={label}
-              rightIcon={rightIcon}
-              selectedLabel={selectedLabel}
-              mode={mode}
-              disabled={disabled}
-              error={error}
-            />
+          <View pointerEvents={isSearchable ? 'auto' : 'none'}>
+            <CustomDropdownInput {...inputProps} />
           </View>
         </Touchable>
       }

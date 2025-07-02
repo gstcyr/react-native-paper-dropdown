@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, View, ViewStyle } from 'react-native';
 import {
   Appbar,
@@ -9,6 +9,7 @@ import {
   MD3LightTheme,
   PaperProvider,
   Paragraph,
+  Searchbar,
   TextInput,
   ThemeProvider,
   TouchableRipple,
@@ -117,12 +118,68 @@ const CustomDropdownInput = ({
   );
 };
 
+const SearchableInput = ({
+  onFocus,
+  searchValue,
+  onSearchChange,
+  placeholder,
+}: DropdownInputProps & {
+  searchValue?: string;
+  onSearchChange?: (value: string) => void;
+}) => {
+  return (
+    <Searchbar
+      placeholder={placeholder || 'Search...'}
+      value={searchValue || ''}
+      {...(onSearchChange && { onChangeText: onSearchChange })}
+      onFocus={onFocus}
+      style={styles.searchBar}
+    />
+  );
+};
+
 export default function App() {
   const [nightMode, setNightmode] = useState(false);
   const [gender, setGender] = useState<string>();
   const [colors, setColors] = useState<string[]>([]);
   const refDropdown1 = useRef<DropdownRef>(null);
   const Theme = nightMode ? MD3DarkTheme : MD3LightTheme;
+
+  // Single-select search functionality
+  const [searchOptions, setSearchOptions] = useState(OPTIONS);
+  const [searchValue, setSearchValue] = useState('');
+
+  const handleSearch = useCallback((value: string) => {
+    setSearchValue(value);
+    setGender(undefined);
+    const filtered = OPTIONS.filter((option) =>
+      option.label.toLowerCase().includes(value.toLowerCase())
+    );
+    setSearchOptions(filtered);
+  }, []);
+  const handleGenderSelect = useCallback((selectedGender?: string) => {
+    setGender(selectedGender);
+    setSearchValue(
+      OPTIONS.find((o) => o.value === selectedGender)?.label || ''
+    );
+    setSearchOptions(OPTIONS);
+  }, []);
+
+  // Multi-select search functionality
+  const [colorSearchOptions, setColorSearchOptions] =
+    useState(MULTI_SELECT_OPTIONS);
+  const [colorSearchValue, setColorSearchValue] = useState('');
+
+  const handleColorSearch = useCallback((value: string) => {
+    setColorSearchValue(value);
+    const filtered = MULTI_SELECT_OPTIONS.filter((option) =>
+      option.label.toLowerCase().includes(value.toLowerCase())
+    );
+    setColorSearchOptions(filtered);
+  }, []);
+  const handleColorSelect = useCallback((selectedColors?: string[]) => {
+    setColors(selectedColors || []);
+  }, []);
 
   return (
     <ThemeProvider theme={Theme}>
@@ -228,6 +285,42 @@ export default function App() {
               <View style={styles.spacer} />
               <View style={styles.spacer} />
 
+              <Headline>Searchable</Headline>
+              <View style={styles.spacer} />
+              <Paragraph>Searchable Dropdown</Paragraph>
+              <Dropdown
+                label={'Gender'}
+                placeholder="Search gender..."
+                options={searchOptions}
+                value={gender}
+                onSelect={handleGenderSelect}
+                isSearchable
+                CustomDropdownInput={SearchableInput}
+                customInputProps={{
+                  searchValue,
+                  onSearchChange: handleSearch,
+                }}
+              />
+              <View style={styles.spacer} />
+              <Paragraph>Searchable Multi Select Dropdown</Paragraph>
+              <MultiSelectDropdown
+                label={'Colors'}
+                placeholder="Search Colors"
+                options={colorSearchOptions}
+                value={colors}
+                onSelect={handleColorSelect}
+                mode={'outlined'}
+                isSearchable
+                CustomMultiSelectDropdownInput={SearchableInput}
+                customInputProps={{
+                  searchValue: colorSearchValue,
+                  onSearchChange: handleColorSearch,
+                }}
+              />
+
+              <View style={styles.spacer} />
+              <View style={styles.spacer} />
+
               <Headline>Reset</Headline>
               <View style={styles.spacer} />
               <Button
@@ -274,4 +367,5 @@ const styles = StyleSheet.create({
   spacer: {
     height: 16,
   },
+  searchBar: { borderRadius: 4 },
 });

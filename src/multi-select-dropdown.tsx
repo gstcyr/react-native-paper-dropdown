@@ -1,5 +1,13 @@
 import { forwardRef, useCallback, useImperativeHandle, useMemo } from 'react';
-import { FlatList, Platform, ScrollView, StatusBar, View } from 'react-native';
+import {
+  FlatList,
+  NativeSyntheticEvent,
+  Platform,
+  ScrollView,
+  StatusBar,
+  TextInputFocusEventData,
+  View,
+} from 'react-native';
 import { Menu, TextInput, TouchableRipple } from 'react-native-paper';
 import DropdownInput from './dropdown-input';
 import MultiSelectDropdownItem from './multi-select-dropdown-item';
@@ -31,6 +39,7 @@ function MultiSelectDropdown(
     isFlatList = false,
     flatListProps,
     scrollViewProps,
+    isSearchable = false,
     Touchable = TouchableRipple,
     disabled = false,
     error = false,
@@ -38,6 +47,7 @@ function MultiSelectDropdown(
     CustomMultiSelectDropdownItem = MultiSelectDropdownItem,
     CustomMultiSelectDropdownInput = DropdownInput,
     CustomMenuHeader = DropdownHeader,
+    customInputProps = {},
   } = props;
 
   const selectedLabel = useMemo(
@@ -56,7 +66,7 @@ function MultiSelectDropdown(
     menuStyle,
     defaultListStyle,
     dropdownLayout,
-  } = useDropdown(maxMenuHeight);
+  } = useDropdown({ maxMenuHeight, isSearchable });
   const rightIcon = enable ? menuUpIcon : menuDownIcon;
 
   useImperativeHandle(ref, () => ({
@@ -95,6 +105,39 @@ function MultiSelectDropdown(
     ]
   );
 
+  const handleInputFocus = useCallback(
+    (_e: NativeSyntheticEvent<TextInputFocusEventData>) => setEnable(true),
+    [setEnable]
+  );
+
+  // Memoize the custom input props to prevent unnecessary re-renders
+  const inputProps = useMemo(
+    () => ({
+      placeholder,
+      label,
+      rightIcon,
+      selectedLabel,
+      mode,
+      disabled,
+      error,
+      isSearchable,
+      onFocus: handleInputFocus,
+      ...customInputProps,
+    }),
+    [
+      placeholder,
+      label,
+      rightIcon,
+      selectedLabel,
+      mode,
+      disabled,
+      error,
+      isSearchable,
+      handleInputFocus,
+      customInputProps,
+    ]
+  );
+
   return (
     <Menu
       testID={menuTestID}
@@ -108,19 +151,11 @@ function MultiSelectDropdown(
         <Touchable
           testID={testID}
           disabled={disabled}
-          onPress={toggleMenu}
           onLayout={onLayout}
+          {...(!isSearchable && { onPress: toggleMenu })}
         >
-          <View pointerEvents="none">
-            <CustomMultiSelectDropdownInput
-              placeholder={placeholder}
-              label={label}
-              rightIcon={rightIcon}
-              selectedLabel={selectedLabel}
-              mode={mode}
-              disabled={disabled}
-              error={error}
-            />
+          <View pointerEvents={isSearchable ? 'auto' : 'none'}>
+            <CustomMultiSelectDropdownInput {...inputProps} />
           </View>
         </Touchable>
       }

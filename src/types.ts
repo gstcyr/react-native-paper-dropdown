@@ -2,9 +2,11 @@ import { ForwardRefExoticComponent } from 'react';
 import {
   DimensionValue,
   FlatListProps,
+  NativeSyntheticEvent,
   PressableProps,
   ScrollViewProps,
   StyleProp,
+  TextInputFocusEventData,
   View,
   ViewStyle,
 } from 'react-native';
@@ -19,6 +21,8 @@ export type DropdownInputProps = {
   mode?: 'flat' | 'outlined';
   disabled?: boolean;
   error?: boolean;
+  isSearchable?: boolean;
+  onFocus?: (e: NativeSyntheticEvent<TextInputFocusEventData>) => void;
 };
 
 export type Option = {
@@ -38,6 +42,7 @@ export type DropdownProps = {
   listContainerStyle?: StyleProp<ViewStyle>;
   hideMenuHeader?: boolean;
   statusBarHeight?: number;
+  isSearchable?: boolean;
   Touchable?: ForwardRefExoticComponent<
     PressableProps & React.RefAttributes<View>
   >;
@@ -45,6 +50,7 @@ export type DropdownProps = {
   CustomMenuHeader?: (props: DropdownHeaderProps) => JSX.Element;
   CustomDropdownItem?: (props: DropdownItemProps) => JSX.Element;
   CustomDropdownInput?: (props: DropdownInputProps) => JSX.Element;
+  customInputProps?: Record<string, any>;
 } & Pick<
   TextInputProps,
   'placeholder' | 'label' | 'mode' | 'disabled' | 'error'
@@ -63,6 +69,7 @@ export type MultiSelectDropdownProps = {
   listContainerStyle?: StyleProp<ViewStyle>;
   hideMenuHeader?: boolean;
   statusBarHeight?: number;
+  isSearchable?: boolean;
   Touchable?: ForwardRefExoticComponent<
     PressableProps & React.RefAttributes<View>
   >;
@@ -72,6 +79,7 @@ export type MultiSelectDropdownProps = {
     props: MultiSelectDropdownItemProps
   ) => JSX.Element;
   CustomMultiSelectDropdownInput?: (props: DropdownInputProps) => JSX.Element;
+  customInputProps?: Record<string, any>;
 } & Pick<
   TextInputProps,
   'placeholder' | 'label' | 'mode' | 'disabled' | 'error'
