@@ -1,8 +1,16 @@
-import { Platform, ScrollView, StatusBar, View } from 'react-native';
+import {
+  FlatList,
+  NativeSyntheticEvent,
+  Platform,
+  ScrollView,
+  StatusBar,
+  TextInputFocusEventData,
+  View,
+} from 'react-native';
 import { Menu, TextInput, TouchableRipple } from 'react-native-paper';
 import DropdownItem from './dropdown-item';
 import DropdownInput from './dropdown-input';
-import { DropdownProps, DropdownRef } from './types';
+import { DropdownProps, DropdownRef, Option } from './types';
 import useDropdown from './use-dropdown';
 import { forwardRef, useCallback, useImperativeHandle, useMemo } from 'react';
 import DropdownHeader from './dropdown-header';
@@ -20,10 +28,15 @@ function Dropdown(props: DropdownProps, ref: React.Ref<DropdownRef>) {
     value,
     maxMenuHeight,
     menuContentStyle,
+    listContainerStyle,
     statusBarHeight = Platform.OS === 'android'
       ? StatusBar.currentHeight
       : undefined,
     hideMenuHeader = false,
+    isFlatList = false,
+    flatListProps,
+    scrollViewProps,
+    isSearchable = false,
     Touchable = TouchableRipple,
     disabled = false,
     error = false,
@@ -31,6 +44,7 @@ function Dropdown(props: DropdownProps, ref: React.Ref<DropdownRef>) {
     CustomDropdownItem = DropdownItem,
     CustomDropdownInput = DropdownInput,
     CustomMenuHeader = DropdownHeader,
+    customInputProps = {},
   } = props;
   const selectedLabel = options.find((option) => option.value === value)?.label;
   const {
@@ -39,9 +53,9 @@ function Dropdown(props: DropdownProps, ref: React.Ref<DropdownRef>) {
     toggleMenu,
     onLayout,
     menuStyle,
-    scrollViewStyle,
+    defaultListStyle,
     dropdownLayout,
-  } = useDropdown(maxMenuHeight);
+  } = useDropdown({ maxMenuHeight, isSearchable });
   const rightIcon = enable ? menuUpIcon : menuDownIcon;
   const contentStyle = useMemo(() => ({ paddingVertical: 0 }), []);
 
@@ -59,6 +73,63 @@ function Dropdown(props: DropdownProps, ref: React.Ref<DropdownRef>) {
     toggleMenu();
   }, [onSelect, toggleMenu]);
 
+  const renderDropdownItem = useCallback(
+    (option: Option, index: number) => (
+      <CustomDropdownItem
+        key={option.value}
+        option={option}
+        value={value}
+        width={dropdownLayout.width}
+        toggleMenu={toggleMenu}
+        onSelect={onSelect}
+        isLast={options.length <= index + 1}
+        menuItemTestID={menuTestID ? `${menuTestID}-${option.value}` : ''}
+      />
+    ),
+    [
+      value,
+      dropdownLayout.width,
+      toggleMenu,
+      onSelect,
+      options,
+      menuTestID,
+      CustomDropdownItem,
+    ]
+  );
+
+  const handleInputFocus = useCallback(
+    (_e: NativeSyntheticEvent<TextInputFocusEventData>) => setEnable(true),
+    [setEnable]
+  );
+
+  // Memoize the custom input props to prevent unnecessary re-renders
+  const inputProps = useMemo(
+    () => ({
+      placeholder,
+      label,
+      rightIcon,
+      selectedLabel,
+      mode,
+      disabled,
+      error,
+      isSearchable,
+      onFocus: handleInputFocus,
+      ...customInputProps,
+    }),
+    [
+      placeholder,
+      label,
+      rightIcon,
+      selectedLabel,
+      mode,
+      disabled,
+      error,
+      isSearchable,
+      handleInputFocus,
+      customInputProps,
+    ]
+  );
+
   return (
     <Menu
       visible={enable}
@@ -71,19 +142,11 @@ function Dropdown(props: DropdownProps, ref: React.Ref<DropdownRef>) {
         <Touchable
           testID={testID}
           disabled={disabled}
-          onPress={toggleMenu}
           onLayout={onLayout}
+          {...(!isSearchable && { onPress: toggleMenu })}
         >
-          <View pointerEvents="none">
-            <CustomDropdownInput
-              placeholder={placeholder}
-              label={label}
-              rightIcon={rightIcon}
-              selectedLabel={selectedLabel}
-              mode={mode}
-              disabled={disabled}
-              error={error}
-            />
+          <View pointerEvents={isSearchable ? 'auto' : 'none'}>
+            <CustomDropdownInput {...inputProps} />
           </View>
         </Touchable>
       }
@@ -99,22 +162,27 @@ function Dropdown(props: DropdownProps, ref: React.Ref<DropdownRef>) {
           multiSelect={false}
         />
       )}
-      <ScrollView style={scrollViewStyle} bounces={false}>
-        {options.map((option, index) => {
-          return (
-            <CustomDropdownItem
-              key={option.value}
-              option={option}
-              value={value}
-              width={dropdownLayout.width}
-              toggleMenu={toggleMenu}
-              onSelect={onSelect}
-              isLast={options.length <= index + 1}
-              menuItemTestID={menuTestID ? `${menuTestID}-${option.value}` : ''}
-            />
-          );
-        })}
-      </ScrollView>
+
+      {isFlatList ? (
+        <FlatList
+          data={options}
+          bounces={false}
+          renderItem={({ item: option, index }) =>
+            renderDropdownItem(option, index)
+          }
+          keyExtractor={(item) => item.value}
+          style={[defaultListStyle, listContainerStyle]}
+          {...flatListProps}
+        />
+      ) : (
+        <ScrollView
+          style={[defaultListStyle, listContainerStyle]}
+          bounces={false}
+          {...scrollViewProps}
+        >
+          {options.map((option, index) => renderDropdownItem(option, index))}
+        </ScrollView>
+      )}
     </Menu>
   );
 }

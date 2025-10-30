@@ -7,7 +7,17 @@ import {
   ViewStyle,
 } from 'react-native';
 
-function useDropdown(maxMenuHeight?: number, maxHeightFraction: number = 2.5) {
+export type UseDropdownParams = {
+  maxMenuHeight?: number;
+  maxHeightFraction?: number;
+  isSearchable?: boolean;
+};
+
+function useDropdown({
+  maxMenuHeight,
+  maxHeightFraction = 2.5,
+  isSearchable = false,
+}: UseDropdownParams) {
   const [enable, setEnable] = useState(false);
   const { height } = useWindowDimensions();
   const finalMenuHeight = maxMenuHeight ?? height / maxHeightFraction;
@@ -31,14 +41,22 @@ function useDropdown(maxMenuHeight?: number, maxHeightFraction: number = 2.5) {
     []
   );
 
+  const searchablePositioning = useMemo(() => {
+    if (!isSearchable) return {};
+
+    // If the dropdown is searchable, position it below the input
+    return { marginTop: dropdownLayout.height };
+  }, [isSearchable, dropdownLayout.height]);
+
   const menuStyle: ViewStyle = useMemo(
     () => ({
       width: dropdownLayout.width,
+      ...searchablePositioning,
     }),
-    [dropdownLayout.width]
+    [dropdownLayout.width, searchablePositioning]
   );
 
-  const scrollViewStyle: ViewStyle = useMemo(
+  const defaultListStyle: ViewStyle = useMemo(
     () => ({
       maxHeight: finalMenuHeight,
     }),
@@ -51,7 +69,7 @@ function useDropdown(maxMenuHeight?: number, maxHeightFraction: number = 2.5) {
     toggleMenu,
     onLayout,
     menuStyle,
-    scrollViewStyle,
+    defaultListStyle,
     dropdownLayout,
   };
 }

@@ -10,6 +10,7 @@ function DropdownInput(props: DropdownInputProps) {
     mode,
     disabled,
     error,
+    isSearchable = false,
   } = props;
 
   return (
@@ -19,7 +20,7 @@ function DropdownInput(props: DropdownInputProps) {
       value={selectedLabel}
       right={rightIcon}
       mode={mode}
-      editable={false}
+      editable={isSearchable}
       disabled={disabled}
       error={error}
     />
