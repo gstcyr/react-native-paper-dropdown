@@ -25,7 +25,7 @@ function DropdownItem(props: DropdownItemProps) {
     ]
   );
   const onPress = () => {
-    if (option.value) {
+    if (option.value !== null) {
       onSelect?.(option.value);
     }
     toggleMenu();

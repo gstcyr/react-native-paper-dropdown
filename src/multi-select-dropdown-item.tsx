@@ -22,7 +22,7 @@ function MultiSelectDropdownItem(props: MultiSelectDropdownItemProps) {
   };
 
   const onPress = () => {
-    if (option.value) {
+    if (option.value !== null) {
       const valueIndex = value.indexOf(option.value);
       if (valueIndex === -1) {
         onSelect?.([...value, option.value]);
